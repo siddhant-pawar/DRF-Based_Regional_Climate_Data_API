@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+
+{% block title %}Weather Data{% endblock %}
+
+{% block content %}
+<div class="hero-full-container">
+    <div class="background-image"></div>
+    <div class="text-content">
+        <h1>Weather Data</h1>
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="year-select">Select Year:</label>
+                <select id="year-select" name="year" required>
+                    {% for year in years %}
+                        <option value="{{ year }}">{{ year }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="month-select">Select Month:</label>
+                <select id="month-select" name="month" required>
+                    <option value="1">January</option>
+                    <option value="2">February</option>
+                    <option value="3">March</option>
+                    <option value="4">April</option>
+                    <option value="5">May</option>
+                    <option value="6">June</option>
+                    <option value="7">July</option>
+                    <option value="8">August</option>
+                    <option value="9">September</option>
+                    <option value="10">October</option>
+                    <option value="11">November</option>
+                    <option value="12">December</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="metric-select">Select Weather Metric:</label>
+                <select id="metric-select" name="metric" required>
+                    <option value="tmax">Max Temperature</option>
+                    <option value="tmin">Min Temperature</option>
+                    <option value="tmean">Mean Temperature</option>
+                    <option value="rainfall">Rainfall</option>
+                    <option value="sunshine">Sunshine</option>
+                    <option value="raindays1mm">Rain Days (1mm)</option>
+                    <option value="airfrost">Air Frost</option>
+                </select>
+            </div>
+
+            <button type="submit">Retrieve Data</button>
+        </form>
+
+        <div class="data-display" id="data-section">
+            {% if selected_data %}
+                <h3>{{ selected_metric|capfirst }} Data for {{ selected_year }} {{ selected_month_name }}</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Year</th>
+                            <th>Month</th>
+                            <th>Value</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in selected_data %}
+                            <tr>
+                                <td>{{ item.year }}</td>
+                                <td>{{ item.month }}</td>
+                                <td>{{ item.value }}</td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="3">No items found for this metric.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p>No data available for the selected year, month, and metric.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
