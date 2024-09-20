@@ -68,7 +68,7 @@ Map
     }
 
     .fa-icon:hover {
-        color: #0056b3;
+        color: #0056b3; /* Darker blue on hover */
         transform: scale(1.2);
     }
 
@@ -83,34 +83,42 @@ Map
     .timeline-item {
         margin: 10px 0;
     }
+
+    .button-container {
+        margin-top: 20px;
+    }
 </style>
 
 <div class="container">
-    <h1 class="h2">Contact Me</h1>
+    <h1 class="h2">Map</h1>
 
-    <div class="form-group">
-        <label for="year-select">Select Year:</label>
-        <select id="year-select" name="year" required>
-            {% for year in years %}
-                <option value="{{ year }}">{{ year }}</option>
-            {% endfor %}
-        </select>
-    </div>
+    <form method="GET" action="">
+        <div class="form-group">
+            <label for="year-select">Select Year:</label>
+            <select id="year-select" name="year" required>
+                {% for year in years %}
+                    <option value="{{ year }}" {% if year == selected_year %}selected{% endif %}>{{ year }}</option>
+                {% endfor %}
+            </select>
+        </div>
 
-    <div class="form-group">
-        <label for="metric-select">Select Weather Metric:</label>
-        <select id="metric-select" name="metric" required>
-            <option value="tmax">Max Temperature</option>
-            <option value="tmin">Min Temperature</option>
-            <option value="tmean">Mean Temperature</option>
-            <option value="rainfall">Rainfall</option>
-            <option value="sunshine">Sunshine</option>
-            <option value="raindays1mm">Rain Days (1mm)</option>
-            <option value="airfrost">Air Frost</option>
-        </select>
-        <br>
-        <button type="submit">Retrieve Data</button>
-    </div>
+        <div class="form-group">
+            <label for="metric-select">Select Weather Metric:</label>
+            <select id="metric-select" name="metric" required>
+                <option value="tmax" {% if selected_metric == 'tmax' %}selected{% endif %}>Max Temperature</option>
+                <option value="tmin" {% if selected_metric == 'tmin' %}selected{% endif %}>Min Temperature</option>
+                <option value="tmean" {% if selected_metric == 'tmean' %}selected{% endif %}>Mean Temperature</option>
+                <option value="rainfall" {% if selected_metric == 'rainfall' %}selected{% endif %}>Rainfall</option>
+                <option value="sunshine" {% if selected_metric == 'sunshine' %}selected{% endif %}>Sunshine</option>
+                <option value="raindays1mm" {% if selected_metric == 'raindays1mm' %}selected{% endif %}>Rain Days (1mm)</option>
+                <option value="airfrost" {% if selected_metric == 'airfrost' %}selected{% endif %}>Air Frost</option>
+            </select>
+        </div>
+        
+        <div class="button-container">
+            <button type="submit">Retrieve Data</button>
+        </div>
+    </form>
 
     <div id="map"></div>
 
@@ -130,30 +138,30 @@ Map
     <div class="timeline">
         <h3>Timeline</h3>
         <div class="timeline-item">
-            <strong>2020:</strong> Started my journey in web development.
+            <strong>2021:</strong> Started my journey in web development.
         </div>
         <div class="timeline-item">
-            <strong>2021:</strong> Joined a startup as a junior developer.
+            <strong>2022:</strong> Grind and learn about networking and web development.
         </div>
         <div class="timeline-item">
-            <strong>2022:</strong> Worked on multiple projects, enhancing my skills.
+            <strong>2023:</strong> Worked on multiple projects, enhancing my skills and joined a startup as a junior developer.
         </div>
         <div class="timeline-item">
-            <strong>2023:</strong> Currently expanding my knowledge in AI and ML.
+            <strong>2024:</strong> Currently expanding my knowledge in AI and ML.
         </div>
     </div>
 </div>
 
 <script>
-    var map = L.map('map').setView([54.9784, -1.617439], 6); // UK coordinates
+    var map = L.map('map').setView([54.9784, -1.617439], 6); // Default coordinates
     var tileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
         attribution: '&copy; <a href="https://github.com/siddhant-pawar/">Siddhant Pawar</a>',
         maxZoom: 20,
         minZoom: 1
     }).addTo(map);
 
-    // Function to update the map based on the selected metric
-    function updateMap(metric) {
+    // Function to update the map with selected data
+    function updateMap(data) {
         // Clear previous layers
         map.eachLayer(function(layer) {
             if (layer !== tileLayer) {
@@ -161,31 +169,19 @@ Map
             }
         });
 
-        // Mock data for demonstration
-        let weatherData = {
-            tmax: [{ lat: 54.9784, lng: -1.617439, value: 25 }],
-            tmin: [{ lat: 55.9784, lng: -1.617439, value: 10 }],
-            rainfall: [{ lat: 56.9784, lng: -1.617439, value: 100 }],
-            sunshine: [{ lat: 57.9784, lng: -1.617439, value: 200 }],
-            airfrost: [{ lat: 58.9784, lng: -1.617439, value: 5 }]
-        };
+        // Default marker location
+        var defaultLocation = [54.9784, -1.617439];
 
-        var selectedData = weatherData[metric] || [];
-
-        selectedData.forEach(function(item) {
-            L.marker([item.lat, item.lng]).addTo(map)
-                .bindPopup(`Metric: ${metric}, Value: ${item.value}`)
+        data.forEach(function(item) {
+            // Create a marker with the value displayed in the popup
+            L.marker(defaultLocation).addTo(map)
+                .bindPopup(`Year: ${item.year}, Value: ${item.value}`)
                 .openPopup();
         });
     }
 
-    // Event listener for the weather metric selection
-    document.getElementById('metric-select').addEventListener('change', function() {
-        var selectedMetric = this.value;
-        updateMap(selectedMetric);
-    });
-
-    // Initial map update
-    updateMap('tmax'); // Default metric on load
+    // Initial call to update the map with the selected data
+    updateMap({{ selected_data|safe }});
 </script>
+
 {% endblock %}

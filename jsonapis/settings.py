@@ -9,18 +9,19 @@ https://docs.djangoproject.com/en/4.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
-
 from pathlib import Path
 import os
-from datetime import timedelta # import this library top of the settings.py file
-
+from datetime import timedelta
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Check for Windows-specific paths
 if os.name == 'nt':
-    VENV_BASE = os.environ['VIRTUAL_ENV']
-    os.environ['PATH'] = os.path.join(VENV_BASE, 'Lib\\site-packages\\osgeo') + ';' + os.environ['PATH']
-    os.environ['PROJ_LIB'] = os.path.join(VENV_BASE, 'Lib\\site-packages\\osgeo\\data\\proj') + ';' + os.environ['PATH']
+    VENV_BASE = os.environ.get('VIRTUAL_ENV', '')
+    if VENV_BASE:
+        os.environ['PATH'] = os.path.join(VENV_BASE, 'Lib\\site-packages\\osgeo') + ';' + os.environ['PATH']
+        os.environ['PROJ_LIB'] = os.path.join(VENV_BASE, 'Lib\\site-packages\\osgeo\\data\\proj') + ';' + os.environ['PATH']
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
@@ -29,12 +30,19 @@ if os.name == 'nt':
 SECRET_KEY = 'django-insecure-=7$tjdvq8l(cv1dddb)1c+(hei7wet$ln1*rpwn5no==f!#+fh'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-ALLOWED_HOSTS = ['127.0.0.1','*']
-
+#DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 DEBUG = True
 
-# Application definition
 
+ALLOWED_HOSTS = [
+    '127.0.0.1',
+    'localhost',
+    'www.regional-climate-stories.up.railway.app',
+    'regional-climate-stories.up.railway.app',
+]
+
+
+# Application definition
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -44,28 +52,15 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'datasender',
     'rest_framework',
-    #'rest_framework_simplejwt',
-
+    # Uncomment when using JWT
+    # 'rest_framework_simplejwt',
 ]
 
+CSRF_TRUSTED_ORIGINS = ['https://regional-climate-stories.up.railway.app']
 
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
 
-# REST_FRAMEWORK = {
-#     'DEFAULT_PERMISSION_CLASSES': (
-#         'rest_framework.permissions.IsAuthenticated',
-#     ),
-#     'DEFAULT_AUTHENTICATION_CLASSES': (
-#         'rest_framework_simplejwt.authentication.JWTAuthentication',
-#     ),
-# }
-
-# SIMPLE_JWT = {
-#     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
-#     'SLIDING_TOKEN_REFRESH_LIFETIME': timedelta(days=1),
-#     'SLIDING_TOKEN_LIFETIME': timedelta(days=30),
-#     'SLIDING_TOKEN_REFRESH_LIFETIME_LATE_USER': timedelta(days=1),
-#     'SLIDING_TOKEN_LIFETIME_LATE_USER': timedelta(days=30),
-# }
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -75,7 +70,6 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-
 ]
 
 ROOT_URLCONF = 'jsonapis.urls'
@@ -83,7 +77,7 @@ ROOT_URLCONF = 'jsonapis.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -98,10 +92,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'jsonapis.wsgi.application'
 
-
-# Database
-# https://docs.djangoproject.com/en/4.2/ref/settings/#databases
-
+# Database configuration
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
@@ -112,7 +103,7 @@ DATABASES = {
     }
 }
 
-DATA_UPLOAD_MAX_NUMBER_FIELDS = 10000  # or any higher number you find appropriate
+DATA_UPLOAD_MAX_NUMBER_FIELDS = 10000  # Adjust as necessary
 
 CACHES = {
     'default': {
@@ -121,8 +112,6 @@ CACHES = {
 }
 
 # Password validation
-# https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
-
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
@@ -138,32 +127,45 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
-# https://docs.djangoproject.com/en/4.2/topics/i18n/
-
 LANGUAGE_CODE = 'en-us'
-
 TIME_ZONE = 'UTC'
-
 USE_I18N = True
-
 USE_TZ = True
 
-
 # Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/4.2/howto/static-files/
-
 STATIC_URL = '/static/'
 
-# if DEBUG:
-#     STATICFILES_DIRS = [os.path.join(BASE_DIR, '/static')]
-# else:
-#     STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'datasender', 'static'),
+]
+
+
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 
 
 # Default primary key field type
-# https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
-
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Uncomment and configure JWT settings when you're ready
+# REST_FRAMEWORK = {
+#     'DEFAULT_PERMISSION_CLASSES': (
+#         'rest_framework.permissions.IsAuthenticated',
+#     ),
+#     'DEFAULT_AUTHENTICATION_CLASSES': (
+#         'rest_framework_simplejwt.authentication.JWTAuthentication',
+#     ),
+# }
+# SIMPLE_JWT = {
+#     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
+#     'SLIDING_TOKEN_REFRESH_LIFETIME': timedelta(days=1),
+#     'SLIDING_TOKEN_LIFETIME': timedelta(days=30),
+# }
+
+CSRF_TRUSTED_ORIGINS = [
+    'https://www.regional-climate-stories.up.railway.app',
+    'https://regional-climate-stories.up.railway.app'
+]
+
+

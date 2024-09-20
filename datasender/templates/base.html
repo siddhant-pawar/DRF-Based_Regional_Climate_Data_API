@@ -6,14 +6,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{% block title %}Ryoiki Tenkai{% endblock %}</title>
-
-    <link rel="apple-touch-icon" sizes="180x180" href="{% static 'assets/apple-icon-180x180.png' %}">
-    <link rel="icon" href="{% static 'assets/favicon.ico' %}">
-    <link rel="stylesheet" href="{% static 'base.css' %}">
+    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
-    <script src="{% static 'mscript.js' %}"></script>
-
+    <link rel="stylesheet" href="{% static 'css/base.css' %}">
+    <script src="{% static 'js/mscript.js' %}"></script>
+    
     <style>
         body {
             font-family: 'VT323', monospace;
@@ -69,7 +67,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background-image: url('{% static 'assets/images/spaced.jpg' %}');
+            background-image: url('{% static 'images/spaced.jpg' %}');
             background-size: cover;
             background-position: center;
             z-index: 0;

@@ -8,6 +8,7 @@ from .serializers import (
     Raindays1mmSerializer, AirFrostSerializer
 )
 import logging
+import requests
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -58,13 +59,28 @@ class HomeView(View):
 
 def map_view(request):
     years = list(range(1850, 2101))
-    
+    selected_year = request.GET.get('year')
+    selected_metric = request.GET.get('metric')
+
+    selected_data = []
+    if selected_year and selected_metric:
+        response = requests.get(f'http://127.0.0.1:8000/api/v1/{selected_metric}/')
+        if response.status_code == 200:
+            weather_data = response.json()
+            selected_data = [
+                {
+                    'year': item['year'],
+                    'value': item['value'],
+                }
+                for item in weather_data if item['year'] == int(selected_year)
+            ]
+
     context = {
         'years': years,
-        'selected_data': None,
-        'selected_metric': None,
+        'selected_data': selected_data,
+        'selected_metric': selected_metric,
     }
-    
+
     return render(request, 'map.html', context)
 
 
