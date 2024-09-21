@@ -12,6 +12,8 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 from pathlib import Path
 import os
 from datetime import timedelta
+import socket
+import psutil
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -31,16 +33,41 @@ SECRET_KEY = 'django-insecure-=7$tjdvq8l(cv1dddb)1c+(hei7wet$ln1*rpwn5no==f!#+fh
 
 # SECURITY WARNING: don't run with debug turned on in production!
 #DEBUG = os.environ.get('DEBUG', 'False') == 'True'
+
+
+
+# Function to get the server's IP addresses
+def get_server_ips():
+    ip_addresses = set()
+    try:
+        # Get all network interfaces
+        for interface, addrs in psutil.net_if_addrs().items():
+            for addr in addrs:
+                if addr.family == socket.AF_INET:  # Filter for IPv4 addresses
+                    ip_addresses.add(addr.address)
+    except Exception as e:
+        print(f"Error getting IP addresses: {e}")
+    return ip_addresses
+
+# SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-
+# Existing ALLOWED_HOSTS
 ALLOWED_HOSTS = [
     '127.0.0.1',
     'localhost',
+    '*',
+    '192.168.1.16',
     'www.regional-climate-stories.up.railway.app',
     'regional-climate-stories.up.railway.app',
 ]
 
+# Get the server's IP addresses and add them to ALLOWED_HOSTS
+server_ips = get_server_ips()
+for ip in server_ips:
+    if ip not in ALLOWED_HOSTS:
+        ALLOWED_HOSTS.append(ip)
+        print(f"Server IP added to ALLOWED_HOSTS: {ip}")
 
 # Application definition
 INSTALLED_APPS = [
@@ -56,7 +83,7 @@ INSTALLED_APPS = [
     # 'rest_framework_simplejwt',
 ]
 
-CSRF_TRUSTED_ORIGINS = ['https://regional-climate-stories.up.railway.app']
+CSRF_TRUSTED_ORIGINS = ['https://regional-climate-stories.up.railway.app','http://192.168.1.16:8000']
 
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
@@ -165,7 +192,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 CSRF_TRUSTED_ORIGINS = [
     'https://www.regional-climate-stories.up.railway.app',
-    'https://regional-climate-stories.up.railway.app'
+    'https://regional-climate-stories.up.railway.app',
+    'http://192.168.1.16:8000/',
 ]
 
 
