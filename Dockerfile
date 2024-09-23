@@ -23,20 +23,21 @@ RUN pip install --upgrade pip && pip install -r requirements.txt
 # Copy application code
 COPY . /app/
 
-# Run migrations
+# Run migrations and create superuser
 RUN python manage.py makemigrations && \
-    python manage.py migrate
+    python manage.py migrate && \
+    python manage.py shell -c "from django.contrib.auth import get_user_model; User = get_user_model(); User.objects.get_or_create(username='sidpawar', defaults={'email': 'sidpawar11@gmail.com', 'password': 'gamebot'})" && \
+    python manage.py fetch_weather_data
 
 # Switch to non-root user
 USER superadmin
 
+# Expose the application port
+EXPOSE 8000
+
 # Health check to ensure the app is running
 HEALTHCHECK CMD curl --fail http://localhost:8000/ || exit 1
 
-# Start the application
-CMD sh -c "python manage.py createsuperuser --noinput --username \"$SUPERUSER_NAME\" --email \"$SUPERUSER_EMAIL\" || true && \
-            exec gunicorn --bind 0.0.0.0:8000 jsonapis.wsgi --log-file - --workers 3 --timeout 120"
-
-# Expose the application port
-EXPOSE 8000
+# Start the Django application with Gunicorn
+ENTRYPOINT ["gunicorn", "--bind", "0.0.0.0:8000", "jsonapis.wsgi", "--log-file", "-", "--workers", "3", "--timeout", "120"]
 

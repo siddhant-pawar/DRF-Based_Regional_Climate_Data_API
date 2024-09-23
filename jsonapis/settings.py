@@ -12,9 +12,6 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 from pathlib import Path
 import os
 from datetime import timedelta
-import socket 
-import psutil 
-from decouple import config
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -31,7 +28,7 @@ if os.name == 'nt':
 
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = config('DEBUG', default=False, cast=bool)
+DEBUG =True
 
 # Existing ALLOWED_HOSTS
 ALLOWED_HOSTS = [
@@ -44,7 +41,7 @@ ALLOWED_HOSTS = [
 
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = config('DJANGO_SECRET_KEY')
+SECRET_KEY = 'django-insecure-=7$tjdvq8l(cv1dddb)1c+(hei7wet$ln1*rpwn5no==f!#+fh'
 
 # Application definition
 INSTALLED_APPS = [
