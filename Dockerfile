@@ -4,6 +4,9 @@ FROM python:3.10-slim
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
+# Set a non-root user for better security
+RUN adduser --disabled-password superadmin
+
 WORKDIR /app
 
 # Install system dependencies
@@ -20,19 +23,25 @@ RUN pip install --upgrade pip && \
 # Copy application code
 COPY . /app/
 
-# Run migrations and makemigrations
+# Copy application code
+COPY . /app/
+
+# Ensure the entrypoint script is copied and executable
+COPY entrypoint.sh /app/
+RUN chmod +x /app/entrypoint.sh
+
+# Run migrations
 RUN python manage.py makemigrations && \
     python manage.py migrate
 
-# Create superuser if necessary
-RUN python manage.py shell -c "from django.contrib.auth import get_user_model; User = get_user_model(); User.objects.create_superuser('sidpawar', 'sidpawar11@gmail.com', 'gamebot')"
+# Switch to non-root user
+USER superadmin
 
-# Run the fetch_weather_data management command
-RUN python manage.py fetch_weather_data
+# Health check to ensure the app is running
+HEALTHCHECK CMD curl --fail http://localhost:8000/ || exit 1
+
+# Set the entrypoint
+ENTRYPOINT ["/app/entrypoint.sh"]
 
 # Expose the application port
 EXPOSE 8000
-
-# Start the Django application with Gunicorn
-ENTRYPOINT ["gunicorn", "--bind", "0.0.0.0:8000", "jsonapis.wsgi", "--log-file", "-"]
-

@@ -1,7 +1,8 @@
-#!/bin/bash
+#!/bin/sh
 
-# Run the fetch_weather_data management command
-python manage.py fetch_weather_data
+# Create superuser if not exists
+python manage.py createsuperuser --noinput --username "$SUPERUSER_NAME" --email "$SUPERUSER_EMAIL" || true
 
-# Start the Django application with Gunicorn
-exec gunicorn --bind 0.0.0.0:8000 jsonapis.wsgi --log-file -
+# Start the Gunicorn server
+exec gunicorn --bind 0.0.0.0:8000 jsonapis.wsgi --log-file - --workers 3 --timeout 120
+

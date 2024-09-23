@@ -1,87 +1,100 @@
 from rest_framework import viewsets
 from django.shortcuts import render
 from django.views import View
-from .models import Tmax, Tmin, Tmean, Rainfall, Sunshine, Raindays1mm, AirFrost
-from .serializers import (
-    TmaxSerializer, TminSerializer, TmeanSerializer,
-    RainfallSerializer, SunshineSerializer,
-    Raindays1mmSerializer, AirFrostSerializer
-)
+from .models import WeatherData
+from .serializers import (WeatherDataSerializer)
 import logging
-import requests
-
+from django.http import JsonResponse
+import json
+from datetime import datetime
 # Configure logging
 logger = logging.getLogger(__name__)
 
 class HomeView(View):
     def get(self, request):
-        years = list(range(1850, 2101))
+        wdataset = WeatherData.objects.all()
+        metrics = set()
+        for data in wdataset:
+            if data.dynamic_data:
+                metrics.update(data.dynamic_data.keys())
+        
         context = {
-            'years': years,
-            'selected_data': None,
-            'selected_metric': None,
+            'years': list(range(1836, datetime.now().year + 1)),
+            'metrics': sorted(metrics),
         }
+        
+        return render(request, 'index.html', context)
+    
+    def post(self, request):
+        action = request.POST.get('action')
+        year = int(request.POST.get('year'))
+        month = int(request.POST.get('month'))
+
+        if action == 'update':
+            old_metric = request.POST.get('old_metric')
+            new_metric = request.POST.get('new_metric')
+            updated_value = request.POST.get('updated_value')
+
+            weather_data, created = WeatherData.objects.get_or_create(year=year, month=month)
+            dynamic_data = weather_data.dynamic_data or {}
+
+            # Remove old metric if it exists
+            if old_metric in dynamic_data:
+                del dynamic_data[old_metric]
+
+            # Update or add the new metric with its value
+            dynamic_data[new_metric] = updated_value
+
+            weather_data.dynamic_data = dynamic_data
+            weather_data.save()
+            return JsonResponse({'success': True, 'message': 'Data updated successfully'})
+
+        elif action == 'add':
+            new_metric = request.POST.get('new_metric')
+            new_value = request.POST.get('new_value')
+            weather_data, created = WeatherData.objects.get_or_create(year=year, month=month)
+            dynamic_data = weather_data.dynamic_data or {}
+            dynamic_data[new_metric] = new_value
+            weather_data.dynamic_data = dynamic_data
+            weather_data.save()
+            return JsonResponse({'success': True, 'message': 'New data added successfully'})
+        
+        elif action == 'delete':
+            metric_to_delete = request.POST.get('metric_to_delete')
+            weather_data, created = WeatherData.objects.get_or_create(year=year, month=month)
+            dynamic_data = weather_data.dynamic_data or {}
+
+            if metric_to_delete in dynamic_data:
+                del dynamic_data[metric_to_delete]  # Remove the metric
+                weather_data.dynamic_data = dynamic_data
+                weather_data.save()
+                return JsonResponse({'success': True, 'message': 'Data deleted successfully'})
+            else:
+                return JsonResponse({'success': False, 'message': 'Metric not found'})
+        
+        # If it's a selection request
+        selected_metric = request.POST.get('metric')
+        selected_data = WeatherData.objects.filter(year=year, month=month).first()
+        
+        if selected_data:
+            dynamic_data = selected_data.dynamic_data
+            metric_value = dynamic_data.get(selected_metric, 'N/A')
+        else:
+            dynamic_data = {}
+            metric_value = 'No data available'
+        
+        context = {
+            'years': list(range(1836, datetime.now().year + 1)),
+            'metrics': sorted(set(dynamic_data.keys())),
+            'selected_year': year,
+            'selected_month': month,
+            'selected_metric': selected_metric,
+            'metric_value': metric_value,
+            'dynamic_data': dynamic_data,
+        }
+        
         return render(request, 'index.html', context)
 
-    def post(self, request):
-        selected_year = request.POST.get('year')
-        selected_metric = request.POST.get('metric')
-
-        logger.debug(f"Received Year: {selected_year}, Metric: {selected_metric}")
-
-        if selected_year and selected_metric:
-            year = int(selected_year)
-            selected_data = None
-
-            model_mapping = {
-                'tmax': Tmax,
-                'tmin': Tmin,
-                'tmean': Tmean,
-                'rainfall': Rainfall,
-                'sunshine': Sunshine,
-                'raindays1mm': Raindays1mm,
-                'airfrost': AirFrost,
-            }
-
-            selected_data = model_mapping.get(selected_metric).objects.filter(year=year)
-
-            logger.debug(f"Selected Data: {list(selected_data)}")
-
-            context = {
-                'years': list(range(1850, 2101)),
-                'selected_data': selected_data,
-                'selected_metric': selected_metric.capitalize(),
-            }
-
-            return render(request, 'index.html', context)
-
-        return self.get(request)
-
-def map_view(request):
-    years = list(range(1850, 2101))
-    selected_year = request.GET.get('year')
-    selected_metric = request.GET.get('metric')
-
-    selected_data = []
-    if selected_year and selected_metric:
-        response = requests.get(f'http://127.0.0.1:8000/api/v1/{selected_metric}/')
-        if response.status_code == 200:
-            weather_data = response.json()
-            selected_data = [
-                {
-                    'year': item['year'],
-                    'value': item['value'],
-                }
-                for item in weather_data if item['year'] == int(selected_year)
-            ]
-
-    context = {
-        'years': years,
-        'selected_data': selected_data,
-        'selected_metric': selected_metric,
-    }
-
-    return render(request, 'map.html', context)
 
 
 class BaseWeatherViewSet(viewsets.ModelViewSet):
@@ -114,30 +127,6 @@ class BaseWeatherViewSet(viewsets.ModelViewSet):
         logger.info(f"Deleting {self.serializer_class.Meta.model.__name__} instance: {instance}")
         instance.delete()
 
-class TmaxViewSet(BaseWeatherViewSet):
-    serializer_class = TmaxSerializer
-    queryset = Tmax.objects.all()
-
-class TminViewSet(BaseWeatherViewSet):
-    serializer_class = TminSerializer
-    queryset = Tmin.objects.all()
-
-class TmeanViewSet(BaseWeatherViewSet):
-    serializer_class = TmeanSerializer
-    queryset = Tmean.objects.all()
-
-class RainfallViewSet(BaseWeatherViewSet):
-    serializer_class = RainfallSerializer
-    queryset = Rainfall.objects.all()
-
-class SunshineViewSet(BaseWeatherViewSet):
-    serializer_class = SunshineSerializer
-    queryset = Sunshine.objects.all()
-
-class Raindays1mmViewSet(BaseWeatherViewSet):
-    serializer_class = Raindays1mmSerializer
-    queryset = Raindays1mm.objects.all()
-
-class AirFrostViewSet(BaseWeatherViewSet):
-    serializer_class = AirFrostSerializer
-    queryset = AirFrost.objects.all()
+class WeatherViewSet(BaseWeatherViewSet):
+    serializer_class = WeatherDataSerializer
+    queryset = WeatherData.objects.all()

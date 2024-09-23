@@ -11,24 +11,60 @@
     <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'css/base.css' %}">
     <script src="{% static 'js/mscript.js' %}"></script>
-    
+    <script src="{% static 'js/mods.js' %}"></script>
+
     <style>
         body {
             font-family: 'VT323', monospace;
-            background-color: #0a0a0a; /* Darker background for better contrast */
-            color: #e0e0e0; /* Softer white for less strain on eyes */
+            background-color: #211f54; /* Dark background */
+            color: #eff0f6; /* Light text */
             margin: 0;
             padding: 0;
             scroll-behavior: smooth;
-            font-size: 1.5rem;
+            font-size: 1.6rem; /* Adjusted font size */
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        body.light-mode {
+            background-color: #ffffff; /* Light background */
+            color: #192024; /* Dark text */
         }
 
         header {
-            background-color: rgba(20, 20, 20, 0.9); /* Darker header for contrast */
+            background-color: rgba(20, 20, 20, 0.9); /* Dark header */
             position: fixed;
             width: 100%;
             z-index: 1000;
             padding: 15px 0;
+        }
+
+        header.light-mode {
+            background-color: rgba(240, 240, 240, 0.9); /* Light header */
+        }
+
+        .weather-container {
+            display: flex;
+            justify-content: center; /* Center horizontally */
+            align-items: center; /* Center vertically */
+            height: 8vh; /* Full viewport height */
+            text-align: center; /* Center text */
+        }
+
+        h2 {
+            color: #ffffff; /* Set text color to white */
+            font-size: 3rem; /* Increase font size */
+            animation: scaleIn 0.5s ease-in-out; /* Apply animation */
+        }
+
+        @keyframes scaleIn {
+            from {
+                transform: scale(0.5); /* Start smaller */
+                opacity: 0; /* Start invisible */
+            }
+            to {
+                transform: scale(1); /* End at normal size */
+                opacity: 1; /* End visible */
+            }
         }
 
         nav {
@@ -37,19 +73,19 @@
         }
 
         nav a {
-            color: #e0e0e0; /* Consistent text color */
+            color: #eff0f6; /* Consistent text color */
             text-decoration: none;
             padding: 10px 15px;
             transition: background-color 0.3s, color 0.3s;
         }
 
         nav a:hover {
-            background-color: rgba(0, 123, 255, 0.2); /* Lighter blue on hover for feedback */
+            background-color: rgba(46, 128, 182, 0.2); /* Hover effect */
             color: #ffffff; /* Change text color on hover */
         }
 
         main {
-            padding-top: 70px; /* Avoid content hiding behind the fixed header */
+            padding-top: 70px; /* Avoid content hiding behind header */
         }
 
         .hero-full-container {
@@ -62,16 +98,16 @@
         }
 
         .background-image {
-            position: absolute;
+            position: fixed; /* Fixed to cover the entire viewport */
             top: 0;
             left: 0;
-            width: 100%;
-            height: 100%;
-            background-image: url('{% static 'images/spaced.jpg' %}');
+            width: 100vw; /* Full viewport width */
+            height: 100vh; /* Full viewport height */
+            background-image: url('{% static 'images/img1.jpg' %}');
             background-size: cover;
             background-position: center;
-            z-index: 0;
-            opacity: 0.5; /* Keep opacity for background visibility */
+            z-index: -1; /* Send to the back */
+            opacity: 0.5; /* Adjust as needed */
         }
 
         .text-content {
@@ -81,7 +117,7 @@
             max-width: 90%;
             background-color: rgba(30, 30, 30, 0.85); /* Slightly lighter for focus */
             border-radius: 10px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.7);
+            box-shadow: 0 4px 20px rgba(20, 20, 20, 0.7);
         }
 
         @keyframes fadeIn {
@@ -93,33 +129,38 @@
             margin-bottom: 20px;
         }
 
-        select {
-          width: 100%;
-          padding: 10px;
-          border: 1px solid #007bff;
-          border-radius: 5px;
-          background-color: #0e0e0e;
-          color: #007bff;
-          transition: border-color 0.3s;
-      }
-
-        select:focus {
-            border-color: #0056b3; /* Highlight on focus */
+        .bold-title {
+            font-weight: bold;
+            color: #3b99d9; /* Match title color with button color */
         }
 
-        button[type="submit"] {
-            background-color: #007bff;
-            border: none;
-            color: #ffffff; /* White text for visibility */
-            padding: 10px 20px;
-            cursor: pointer;
+        select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #3b99d9; /* Steel blue */
             border-radius: 5px;
+            background-color: #2d3e4f; /* Dark slate gray */
+            color: #3b99d9; /* Steel blue text */
+            transition: border-color 0.3s;
+        }
+
+        select:focus {
+            border-color: #2e80b6; /* Steel blue 2 on focus */
+        }
+
+        button {
+            background-color: #3b99d9; /* Steel blue */
+            color: #ffffff; /* White text */
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
             transition: background-color 0.3s, transform 0.2s;
         }
 
-        button[type="submit"]:hover {
-            background-color: #0056b3;
-            transform: scale(1.05); /* Slight scale effect for interaction feedback */
+        button:hover {
+            background-color: #2e80b6; /* Darker blue on hover */
+            transform: scale(1.05); /* Scale effect on hover */
         }
 
         .data-display {
@@ -135,20 +176,61 @@
         }
 
         th, td {
-            border: 1px solid #e0e0e0; /* Soft white for table borders */
+            border: 1px solid #eff0f6; /* Soft white for table borders */
             padding: 8px;
             text-align: left;
         }
 
         th {
-            background-color: #007bff;
+            background-color: #3b99d9; /* Steel blue */
             color: #ffffff;
         }
 
         tbody tr:hover {
-            background-color: rgba(0, 123, 255, 0.2); /* Blue highlight on hover for rows */
+            background-color: rgba(46, 128, 182, 0.2); /* Highlight on hover */
         }
 
+        h3 {
+            color: #3b99d9; /* Change heading color */
+        }
+        
+        label {
+            color: #ffffff; /* Color for labels */
+            font-weight: bold; /* Optional: Make labels bold */
+            display: block; /* Ensure labels appear above inputs */
+            margin-bottom: 5px; /* Space between label and input */
+        }
+        
+        input[type="text"] {
+            width: 100%; /* Full width */
+            padding: 10px; /* Padding inside the input */
+            border: 1px solid #3b99d9; /* Border color */
+            border-radius: 5px; /* Rounded corners */
+            background-color: #2d3e4f; /* Background color */
+            color: #ffffff; /* Text color */
+            transition: border-color 0.3s; /* Transition for border color */
+        }
+        
+        input[type="text"]:focus {
+            border-color: #2e80b6; /* Change border color on focus */
+            outline: none; /* Remove default outline */
+        }
+        
+        .btn {
+            background-color: #3b99d9; /* Button background */
+            color: #ffffff; /* Button text color */
+            padding: 10px 20px; /* Button padding */
+            border: none; /* Remove border */
+            border-radius: 5px; /* Rounded corners */
+            cursor: pointer; /* Pointer on hover */
+            transition: background-color 0.3s, transform 0.2s; /* Button transition */
+        }
+        
+        .btn:hover {
+            background-color: #2e80b6; /* Darker blue on hover */
+            transform: scale(1.05); /* Scale effect on hover */
+        }
+        
         @media (max-width: 768px) {
             .text-content {
                 width: 100%;
@@ -158,7 +240,12 @@
             table {
                 font-size: 1rem;
             }
+
+            nav {
+                flex-direction: column; /* Stack items vertically on small screens */
+            }
         }
+       
     </style>
 </head>
 
@@ -166,7 +253,9 @@
     <header>
         <nav>
             <a href="{% url 'home' %}">Home</a>
-            <a href="{% url 'map' %}">Map</a>
+            <button id="toggle-mode" style="background: none; border: none; color: #eff0f6; cursor: pointer;">
+                <i class="fas fa-moon"></i>
+            </button>
         </nav>
     </header>
 
@@ -174,6 +263,7 @@
         {% block content %}
         {% endblock %}
     </main>
+
 </body>
 
 </html>

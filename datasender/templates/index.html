@@ -6,14 +6,17 @@
 <div class="hero-full-container">
     <div class="background-image"></div>
     <div class="text-content">
-        <h1>Weather Data</h1>
-        <form method="post">
+        <div class="weather-container">
+            <h2>Weather Data</h2>
+        </div>
+        
+        <form method="post" class="data-form" id="select-form">
             {% csrf_token %}
             <div class="form-group">
                 <label for="year-select">Select Year:</label>
                 <select id="year-select" name="year" required>
                     {% for year in years %}
-                        <option value="{{ year }}">{{ year }}</option>
+                        <option value="{{ year }}" {% if year == selected_year %}selected{% endif %}>{{ year }}</option>
                     {% endfor %}
                 </select>
             </div>
@@ -21,66 +24,97 @@
             <div class="form-group">
                 <label for="month-select">Select Month:</label>
                 <select id="month-select" name="month" required>
-                    <option value="1">January</option>
-                    <option value="2">February</option>
-                    <option value="3">March</option>
-                    <option value="4">April</option>
-                    <option value="5">May</option>
-                    <option value="6">June</option>
-                    <option value="7">July</option>
-                    <option value="8">August</option>
-                    <option value="9">September</option>
-                    <option value="10">October</option>
-                    <option value="11">November</option>
-                    <option value="12">December</option>
+                    <option value="1" {% if selected_month == '1' %}selected{% endif %}>January</option>
+                    <option value="2" {% if selected_month == '2' %}selected{% endif %}>February</option>
+                    <option value="3" {% if selected_month == '3' %}selected{% endif %}>March</option>
+                    <option value="4" {% if selected_month == '4' %}selected{% endif %}>April</option>
+                    <option value="5" {% if selected_month == '5' %}selected{% endif %}>May</option>
+                    <option value="6" {% if selected_month == '6' %}selected{% endif %}>June</option>
+                    <option value="7" {% if selected_month == '7' %}selected{% endif %}>July</option>
+                    <option value="8" {% if selected_month == '8' %}selected{% endif %}>August</option>
+                    <option value="9" {% if selected_month == '9' %}selected{% endif %}>September</option>
+                    <option value="10" {% if selected_month == '10' %}selected{% endif %}>October</option>
+                    <option value="11" {% if selected_month == '11' %}selected{% endif %}>November</option>
+                    <option value="12" {% if selected_month == '12' %}selected{% endif %}>December</option>
                 </select>
             </div>
 
             <div class="form-group">
                 <label for="metric-select">Select Weather Metric:</label>
                 <select id="metric-select" name="metric" required>
-                    <option value="tmax">Max Temperature</option>
-                    <option value="tmin">Min Temperature</option>
-                    <option value="tmean">Mean Temperature</option>
-                    <option value="rainfall">Rainfall</option>
-                    <option value="sunshine">Sunshine</option>
-                    <option value="raindays1mm">Rain Days (1mm)</option>
-                    <option value="airfrost">Air Frost</option>
+                    {% for metric in metrics %}
+                        <option value="{{ metric }}" {% if metric == selected_metric %}selected{% endif %}>{{ metric }}</option>
+                    {% endfor %}
                 </select>
             </div>
 
-            <button type="submit">Retrieve Data</button>
+            <button type="submit" class="btn">Retrieve Data</button>
         </form>
 
-        <div class="data-display" id="data-section">
-            {% if selected_data %}
-                <h3>{{ selected_metric|capfirst }} Data for {{ selected_year }} {{ selected_month_name }}</h3>
-                <table>
-                    <thead>
+        {% if dynamic_data %}
+            <h2>Weather Data for {{ selected_month|date:"F" }} {{ selected_year }}</h2>
+            <table class="weather-table">
+                <thead>
+                    <tr>
+                        <th>Metric</th>
+                        <th>Value</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for metric, value in dynamic_data.items %}
                         <tr>
-                            <th>Year</th>
-                            <th>Month</th>
-                            <th>Value</th>
+                            <td>{{ metric }}</td>
+                            <td>{{ value }}</td>
+                            <td>
+                                <button class="btn-update" data-metric="{{ metric }}">Update</button>
+                                <button class="btn-delete" data-metric="{{ metric }}">Delete</button>
+                            </td>
                         </tr>
-                    </thead>
-                    <tbody>
-                        {% for item in selected_data %}
-                            <tr>
-                                <td>{{ item.year }}</td>
-                                <td>{{ item.month }}</td>
-                                <td>{{ item.value }}</td>
-                            </tr>
-                        {% empty %}
-                            <tr>
-                                <td colspan="3">No items found for this metric.</td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            {% else %}
-                <p>No data available for the selected year, month, and metric.</p>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <h3>Add New Data</h3>
+            <form method="post" id="add-form">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="add">
+                <input type="hidden" name="year" value="{{ selected_year }}">
+                <input type="hidden" name="month" value="{{ selected_month }}">
+                
+                <label for="new_metric">New Metric:</label>
+                <input type="text" id="new_metric" name="new_metric" placeholder="New Metric" required>
+                
+                <label for="new_value">New Value:</label>
+                <input type="text" id="new_value" name="new_value" placeholder="New Value" required>
+                
+                <button type="submit" class="btn">Add Data</button>
+            </form>
+            
+            <div id="update-form" style="display: none;">
+                <h3>Update Data</h3>
+                <form method="post" id="update-data-form">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="update">
+                    <input type="hidden" name="year" value="{{ selected_year }}">
+                    <input type="hidden" name="month" value="{{ selected_month }}">
+                    <input type="hidden" name="old_metric" id="update-metric-old-name">
+                    
+                    <label for="update-metric-new-name">New Metric Name:</label>
+                    <input type="text" id="update-metric-new-name" name="new_metric" required placeholder="New Metric Name">
+                    
+                    <label for="update-metric-value">New Value:</label>
+                    <input type="text" id="update-metric-value" name="updated_value" required placeholder="New Value">
+                    
+                    <button type="submit" class="btn">Update Data</button>
+                </form>
+            </div>
+            
+            {% elif selected_year %}
+                <p>No data available for this selection.</p>
             {% endif %}
-        </div>
+            
     </div>
 </div>
+
 {% endblock %}

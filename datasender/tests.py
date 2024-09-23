@@ -1,71 +1,66 @@
 from django.test import TestCase
-from .models import Tmax, Tmin, Tmean, Rainfall, Sunshine, Raindays1mm, AirFrost
+from rest_framework import status
+from rest_framework.test import APIClient
+from .models import WeatherData
 from django.core.exceptions import ValidationError
 
-class WeatherModelTests(TestCase):
-
+class WeatherDataModelTest(TestCase):
     def setUp(self):
-        self.valid_data = {
-            'year': 2023,
-            'month': 8,
-            'value': 30.5
-        }
+        self.weather_data = WeatherData.objects.create(
+            year=2022,
+            month=1,
+            dynamic_data={"temperature": 15, "humidity": 30}
+        )
 
-    def test_valid_model_creation(self):
-        tmax = Tmax(**self.valid_data)
-        tmax.full_clean()  # Ensure validation passes before saving
-        tmax.save()
-        self.assertEqual(Tmax.objects.count(), 1)
-
-    def test_invalid_month_creation(self):
-        for model in [Tmax, Tmin, Rainfall, Sunshine, Raindays1mm, AirFrost]:
-            with self.assertRaises(ValidationError):
-                model(year=2023, month=13, value=30.5).full_clean()  # Invalid month
-            with self.assertRaises(ValidationError):
-                model(year=2023, month=0, value=30.5).full_clean()  # Invalid month
-
-    def test_invalid_year_creation(self):
-        for model in [Tmax, Tmin, Rainfall, Sunshine, Raindays1mm, AirFrost]:
-            with self.assertRaises(ValidationError):
-                model(year=1849, month=8, value=30.5).full_clean()  # Invalid year
-
-    def test_unique_year_month(self):
-        tmax = Tmax(**self.valid_data)
-        tmax.full_clean()
-        tmax.save()
-
-        # Attempt to create a duplicate entry
+    def test_weather_data_creation_with_invalid_year(self):
+        weather_data = WeatherData(year=1800, month=1, dynamic_data={"temperature": 15})
         with self.assertRaises(ValidationError):
-            duplicate_tmax = Tmax(year=2023, month=8, value=31.0)
-            duplicate_tmax.full_clean()  # This should raise ValidationError
+            weather_data.full_clean()  # Trigger validation
 
-    def test_str_method(self):
-        for model in [Tmax, Tmin, Rainfall]:
-            instance = model(**self.valid_data)
-            instance.full_clean()  # Ensure it passes validation
-            instance.save()
-            self.assertEqual(str(instance), f"{model.__name__} - {self.valid_data['year']}-{self.valid_data['month']}: {self.valid_data['value']}")
+    def test_weather_data_creation_with_invalid_month(self):
+        weather_data = WeatherData(year=2022, month=13, dynamic_data={"temperature": 15})
+        with self.assertRaises(ValidationError):
+            weather_data.full_clean()  # Trigger validation
 
-    def test_valid_tmean_creation(self):
-        tmean = Tmean(year=2023, month=8, value=20.0)
-        tmean.full_clean()  # Ensure validation passes
-        tmean.save()
-        self.assertEqual(Tmean.objects.count(), 1)
+    def test_weather_data_update_with_invalid_data(self):
+        self.weather_data.month = 13
+        with self.assertRaises(ValidationError):
+            self.weather_data.full_clean()  # Trigger validation
 
-    def test_valid_sunshine_creation(self):
-        sunshine = Sunshine(year=2023, month=8, value=150.0)
-        sunshine.full_clean()  # Ensure validation passes
-        sunshine.save()
-        self.assertEqual(Sunshine.objects.count(), 1)
+class WeatherDataAPITest(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.weather_data = WeatherData.objects.create(
+            year=2022,
+            month=1,
+            dynamic_data={"temperature": 15}
+        )
+        self.url = f'/api/v1/weather/{self.weather_data.id}/'  # API versioning
 
-    def test_valid_raindays_creation(self):
-        raindays = Raindays1mm(year=2023, month=8, value=5.0)
-        raindays.full_clean()  # Ensure validation passes
-        raindays.save()
-        self.assertEqual(Raindays1mm.objects.count(), 1)
+    def test_get_weather_data_not_found(self):
+        response = self.client.get('/api/v1/weather/9999/')  # Non-existent ID
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
-    def test_valid_airfrost_creation(self):
-        airfrost = AirFrost(year=2023, month=8, value=2.0)
-        airfrost.full_clean()  # Ensure validation passes
-        airfrost.save()
-        self.assertEqual(AirFrost.objects.count(), 1)
+    def test_update_weather_data_invalid(self):
+        data = {'year': 2022, 'month': 13, 'dynamic_data': {"temperature": 20}}  # Invalid month
+        response = self.client.put(self.url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_create_weather_data_invalid_year(self):
+        data = {'year': 1800, 'month': 2, 'dynamic_data': {"temperature": 25}}  # Invalid year
+        response = self.client.post('/api/v1/weather/', data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_create_weather_data_invalid_month(self):
+        data = {'year': 2023, 'month': 13, 'dynamic_data': {"temperature": 25}}  # Invalid month
+        response = self.client.post('/api/v1/weather/', data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_delete_weather_data_not_found(self):
+        response = self.client.delete('/api/v1/weather/9999/')  # Non-existent ID
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_update_weather_data_no_change(self):
+        data = {'year': 2022, 'month': 1, 'dynamic_data': {"temperature": 15}}  # No change
+        response = self.client.put(self.url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)  # Should succeed, no error

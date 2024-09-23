@@ -4,14 +4,13 @@ services:
       context: .
       dockerfile: Dockerfile
     volumes:
-      - .:/app
+      - .:/app  # Sync code for development
     ports:
       - "8000:8000"
-    environment:
-      - PYTHONDONTWRITEBYTECODE=1
-      - PYTHONUNBUFFERED=1
-    command: ["/app/entrypoint.sh"]
+    env_file:
+      - .env  # Load environment variables from .env file
 
 networks:
   default:
     driver: bridge
+
