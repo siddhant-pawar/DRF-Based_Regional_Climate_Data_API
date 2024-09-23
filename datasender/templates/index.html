@@ -67,8 +67,8 @@
                             <td>{{ metric }}</td>
                             <td>{{ value }}</td>
                             <td>
-                                <button class="btn-update" data-metric="{{ metric }}">Update</button>
-                                <button class="btn-delete" data-metric="{{ metric }}">Delete</button>
+                                <button class="btn-update" data-metric="{{ metric }}" aria-label="Update {{ metric }}">Update</button>
+                                <button class="btn-delete" data-metric="{{ metric }}" aria-label="Delete {{ metric }}">Delete</button>
                             </td>
                         </tr>
                     {% endfor %}
@@ -83,7 +83,7 @@
                 <input type="hidden" name="month" value="{{ selected_month }}">
                 
                 <label for="new_metric">New Metric:</label>
-                <input type="text" id="new_metric" name="new_metric" placeholder="New Metric" required>
+                <input type="text" id="new_metric" name="new_metric" placeholder="New Metric" required pattern="^[a-zA-Z0-9 ]+$" title="Only alphanumeric characters allowed">
                 
                 <label for="new_value">New Value:</label>
                 <input type="text" id="new_value" name="new_value" placeholder="New Value" required>
@@ -114,6 +114,7 @@
                 <p>No data available for this selection.</p>
             {% endif %}
             
+        </div>
     </div>
 </div>
 
