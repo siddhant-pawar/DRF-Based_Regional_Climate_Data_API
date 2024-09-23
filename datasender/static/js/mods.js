@@ -1,79 +1,89 @@
-document.addEventListener('DOMContentLoaded', () => {
-    // Theme toggle functionality
-    const toggleButton = document.getElementById('toggle-mode');
-    const body = document.body;
-
-    // Load mode from local storage
-    const currentMode = localStorage.getItem('mode') || 'dark';
-    if (currentMode === 'light') {
-        body.classList.add('light-mode');
-        toggleButton.innerHTML = '<i class="fas fa-sun"></i>';
-    }
-
-    toggleButton.addEventListener('click', () => {
-        body.classList.toggle('light-mode');
-        const newMode = body.classList.contains('light-mode') ? 'light' : 'dark';
-        localStorage.setItem('mode', newMode);
-        toggleButton.innerHTML = newMode === 'light' ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
-
-        // Add transition effect for background color
-        body.style.transition = 'background-color 0.5s ease';
-    });
-
-    // CRUD operations functionality
+document.addEventListener('DOMContentLoaded', function () {
+    // Handle Add Data
     const addForm = document.getElementById('add-form');
-    const updateForm = document.getElementById('update-form');
-    const updateButtons = document.querySelectorAll('.btn-update');
-    const deleteButtons = document.querySelectorAll('.btn-delete');
+    addForm.addEventListener('submit', function (event) {
+        event.preventDefault(); // Prevent the default form submission
 
-    addForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-        submitForm(this);
-    });
-
-    updateButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            const metric = this.getAttribute('data-metric');
-            const value = this.getAttribute('data-value');
-            document.getElementById('update-metric-old-name').value = metric; // Set old metric name
-            document.getElementById('update-metric-new-name').value = metric; // Set new metric name to old one as default
-            document.getElementById('update-metric-value').value = value; // Set current value
-            updateForm.style.display = 'block'; // Show update form
-        });
-    });
-
-    updateForm.querySelector('form').addEventListener('submit', function(e) {
-        e.preventDefault();
-        submitForm(this); // Submit the update form
-    });
-
-    deleteButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            const metric = this.getAttribute('data-metric');
-            if (confirm(`Are you sure you want to delete the metric "${metric}"?`)) {
-                const form = new FormData();
-                form.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
-                form.append('action', 'delete');
-                form.append('year', document.querySelector('[name=year]').value);
-                form.append('month', document.querySelector('[name=month]').value);
-                form.append('metric_to_delete', metric);
-                submitForm(form);
-            }
-        });
-    });
-
-    function submitForm(form) {
+        const formData = new FormData(addForm);
         fetch('', {
             method: 'POST',
-            body: form instanceof FormData ? form : new FormData(form),
+            body: formData,
         })
         .then(response => response.json())
         .then(data => {
-            alert(data.message);
             if (data.success) {
-                location.reload(); // Reload the page to show updated data
+                // Refresh the page or update the UI dynamically
+                alert(data.message);
+                location.reload(); // Reloads the page to see the new data
+            } else {
+                alert(data.message);
             }
         })
         .catch(error => console.error('Error:', error));
+    });
+
+    // Handle Update Data
+    const updateForm = document.getElementById('update-data-form');
+    if (updateForm) {
+        updateForm.addEventListener('submit', function (event) {
+            event.preventDefault();
+
+            const formData = new FormData(updateForm);
+            fetch('', {
+                method: 'POST',
+                body: formData,
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                    location.reload(); // Reloads the page to see updated data
+                } else {
+                    alert(data.message);
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        });
     }
+
+    // Handle Delete Data
+    const deleteButtons = document.querySelectorAll('.btn-delete');
+    deleteButtons.forEach(button => {
+        button.addEventListener('click', function () {
+            const metricToDelete = this.dataset.metric;
+
+            if (confirm(`Are you sure you want to delete ${metricToDelete}?`)) {
+                const formData = new FormData();
+                formData.append('action', 'delete');
+                formData.append('year', document.getElementById('year-select').value);
+                formData.append('month', document.getElementById('month-select').value);
+                formData.append('metric_to_delete', metricToDelete);
+
+                fetch('', {
+                    method: 'POST',
+                    body: formData,
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert(data.message);
+                        location.reload(); // Reloads the page to see updated data
+                    } else {
+                        alert(data.message);
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+            }
+        });
+    });
+
+    // Show update form
+    const updateButtons = document.querySelectorAll('.btn-update');
+    updateButtons.forEach(button => {
+        button.addEventListener('click', function () {
+            const metricToUpdate = this.dataset.metric;
+            document.getElementById('update-metric-old-name').value = metricToUpdate;
+            document.getElementById('update-form').style.display = 'block';
+        });
+    });
 });
